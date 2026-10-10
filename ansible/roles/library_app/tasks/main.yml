@@ -1,0 +1,54 @@
+---
+# roles/library_app/tasks/main.yml — Deploy the Library Management Platform
+- name: Create application directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
+- name: Copy application source code to server
+  ansible.builtin.synchronize:
+    src: "{{ playbook_dir }}/../"
+    dest: "{{ app_dir }}"
+    rsync_opts:
+      - "--exclude=.venv"
+      - "--exclude=__pycache__"
+      - "--exclude=.git"
+      - "--exclude=*.pyc"
+      - "--exclude=reports"
+
+- name: Build Docker image on remote server
+  community.docker.docker_image:
+    name: "{{ app_image }}"
+    source: build
+    build:
+      path: "{{ app_dir }}"
+    state: present
+
+- name: Stop existing container (if any)
+  community.docker.docker_container:
+    name: "{{ app_name }}"
+    state: absent
+  ignore_errors: yes
+
+- name: Start Library Platform container
+  community.docker.docker_container:
+    name: "{{ app_name }}"
+    image: "{{ app_image }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "{{ app_port }}:5000"
+    env:
+      PYTHONUNBUFFERED: "1"
+
+- name: Wait for Flask app to be healthy
+  ansible.builtin.uri:
+    url: "http://localhost:{{ app_port }}/api/health"
+    status_code: 200
+  register: health_result
+  until: health_result.status == 200
+  retries: 10
+  delay: 5

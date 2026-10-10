@@ -1,0 +1,8 @@
+---
+# group_vars/all.yml — variables shared across all roles
+app_name: library-management-platform
+app_port: 5000
+app_image: "library-management-platform:0.0"
+app_dir: /opt/library-platform
+nginx_port: 80
+docker_compose_version: "2.24.5"

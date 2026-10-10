@@ -1,0 +1,54 @@
+---
+# roles/common/tasks/main.yml — System baseline setup
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install system utilities
+  ansible.builtin.apt:
+    name:
+      - curl
+      - wget
+      - git
+      - unzip
+      - htop
+      - vim
+      - python3-pip
+      - python3-venv
+      - ufw
+    state: present
+
+- name: Set timezone to UTC
+  community.general.timezone:
+    name: UTC
+
+- name: Configure UFW — deny all incoming
+  community.general.ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+
+- name: Configure UFW — allow SSH
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: Configure UFW — allow HTTP
+  community.general.ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+
+- name: Configure UFW — allow app port
+  community.general.ufw:
+    rule: allow
+    port: "{{ app_port }}"
+    proto: tcp
+
+- name: Ensure /opt directory exists
+  ansible.builtin.file:
+    path: /opt
+    state: directory
+    mode: "0755"

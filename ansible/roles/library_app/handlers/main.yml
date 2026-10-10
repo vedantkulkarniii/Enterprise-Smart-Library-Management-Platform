@@ -1,0 +1,6 @@
+---
+- name: Restart library_app container
+  community.docker.docker_container:
+    name: "{{ app_name }}"
+    state: started
+    restart: yes

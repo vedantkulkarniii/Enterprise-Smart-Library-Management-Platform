@@ -1,0 +1,39 @@
+---
+# site.yml — Master playbook for Library Management Platform deployment
+# NOTE: This playbook is designed to run against an Ubuntu 22.04 EC2 instance.
+# It has NOT been executed against a real server (no AWS credentials configured).
+# It has been validated with ansible-playbook --syntax-check only.
+
+- name: Deploy Enterprise Smart Library Management Platform
+  hosts: webservers
+  become: true
+
+  pre_tasks:
+    - name: Verify Ubuntu 22.04 target
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_distribution_major_version == "22"
+        msg: "This playbook requires Ubuntu 22.04 LTS"
+
+  roles:
+    - role: common
+      tags: [common, baseline]
+
+    - role: docker
+      tags: [docker]
+
+    - role: library_app
+      tags: [app, deploy]
+
+    - role: nginx
+      tags: [nginx, proxy]
+
+  post_tasks:
+    - name: Print deployment summary
+      ansible.builtin.debug:
+        msg: |
+          ✅ Deployment Complete!
+          Application URL : http://{{ ansible_host }}
+          API Health      : http://{{ ansible_host }}/api/health
+          App Direct Port : http://{{ ansible_host }}:{{ app_port }}
